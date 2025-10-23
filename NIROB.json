@@ -1,0 +1,13 @@
+{ 
+  
+  "fbdl":     "https://nirob-ytb-api.vercel.app/api/fb?url=",
+  "ytdl":     "https://nirob-ytb-api-ruddy.vercel.app/api/yt?url=",
+  "imgur":     "",
+  "YouTube":   "",
+  "ytmp3":     "",
+  "imagine":   "",
+  "upscale":   "",
+  "prompt":    "",
+  "porndl":    "",
+  "tikdl":     "": ""
+}
