@@ -1,2 +1,0 @@
-# pakup
-FUCKUP
