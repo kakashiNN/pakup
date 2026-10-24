@@ -128,8 +128,8 @@ module.exports = {
 
         // Avatars (grey box if avatar could not be loaded)
         const drawAvt = (img, x) => {
-            if (img) ctx.drawImage(img, x, 111, 175, 330, 330);
-            else { ctx.fillStyle = "#cccccc"; ctx.fillRect(x, 1018, 173, 330, 330); }
+            if (img) ctx.drawImage(img, x, 175, 330, 330);
+            else { ctx.fillStyle = "#cccccc"; ctx.fillRect(x, 173, 330, 330); }
         };
         drawAvt(imgAvt1, 120);
         drawAvt(imgAvt2, W - 420);
