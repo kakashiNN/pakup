@@ -3,7 +3,7 @@ const axios = require("axios");
 const fs = require("fs-extra");
 
 const BG_URL = "https://i.imgur.com/msxJhNg.jpeg";
-const UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
 async function download(url, tries = 3) {
     let lastErr;
@@ -12,7 +12,11 @@ async function download(url, tries = 3) {
             const res = await axios.get(url, {
                 responseType: "arraybuffer",
                 timeout: 15000,
-                headers: { "User-Agent": UA }
+                headers: { 
+                    "User-Agent": UA,
+                    "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+                },
+                maxRedirects: 5
             });
             if (res.data && res.data.length) return Buffer.from(res.data);
         } catch (e) {
@@ -35,17 +39,30 @@ async function getBackground(cacheDir) {
         fs.writeFileSync(bgCache, buf);
         return img;
     } catch (e) {
-        return null; // fallback gradient will be drawn
+        return null;
     }
 }
 
+// Fixed Facebook Avatar Fetching Logic
 async function getAvatar(id) {
-    try {
-        const buf = await download(`https://graph.facebook.com/${id}/picture?width=720&height=720&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`, 2);
-        return await loadImage(buf);
-    } catch (e) {
-        return null;
+    const avatarUrls = [
+        `https://graph.facebook.com/${id}/picture?width=720&height=720&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`,
+        `https://graph.facebook.com/v18.0/${id}/picture?type=large&redirect=true`,
+        `https://graph.facebook.com/${id}/picture?type=large`
+    ];
+
+    for (const url of avatarUrls) {
+        try {
+            const buf = await download(url, 2);
+            if (buf) {
+                const img = await loadImage(buf);
+                return img;
+            }
+        } catch (e) {
+            continue;
+        }
     }
+    return null;
 }
 
 module.exports = {
@@ -118,7 +135,7 @@ module.exports = {
         let canvas = createCanvas(W, H);
         let ctx = canvas.getContext("2d");
 
-        // Background drawing
+        // Background
         if (baseImage) {
             ctx.drawImage(baseImage, 0, 0, W, H);
         } else {
@@ -129,22 +146,27 @@ module.exports = {
             ctx.fillRect(0, 0, W, H);
         }
 
-        // Avatars drawing (with correct layout configuration you requested)
-        if (imgAvt1) {
-            ctx.drawImage(imgAvt1, 111, 175, 330, 330);
-        } else {
-            ctx.fillStyle = "#cccccc";
-            ctx.fillRect(111, 175, 330, 330);
-        }
+        // Helper function to draw profile pics cleanly
+        const drawAvatar = (img, x, y, w, h) => {
+            if (img) {
+                ctx.drawImage(img, x, y, w, h);
+            } else {
+                ctx.fillStyle = "#e0e0e0";
+                ctx.fillRect(x, y, w, h);
+                ctx.fillStyle = "#888888";
+                ctx.font = "bold 30px Sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("No Pic", x + w / 2, y + h / 2 + 10);
+            }
+        };
 
-        if (imgAvt2) {
-            ctx.drawImage(imgAvt2, 1018, 173, 330, 330);
-        } else {
-            ctx.fillStyle = "#cccccc";
-            ctx.fillRect(1018, 173, 330, 330);
-        }
+        // User 1 Avatar (X: 111, Y: 175, Width: 330, Height: 330)
+        drawAvatar(imgAvt1, 111, 175, 330, 330);
 
-        // Write canvas to file AFTER drawing everything
+        // User 2 Avatar (X: 1018, Y: 173, Width: 330, Height: 330)
+        drawAvatar(imgAvt2, 1018, 173, 330, 330);
+
+        // Save canvas output to disk
         fs.writeFileSync(pathImg, canvas.toBuffer());
 
         const kawaiiMessage = `@${name1} & @${name2}
