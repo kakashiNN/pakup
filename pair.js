@@ -61,7 +61,9 @@ module.exports = {
         let pathImg = `${cacheDir}/pair_${event.senderID}_${Date.now()}.png`;
 
         var id1 = event.senderID;
-        var name1 = (await api.getUserInfo(id1))[id1].name;
+        var userInfo1 = (await api.getUserInfo(id1))[id1];
+        var name1 = userInfo1 ? userInfo1.name : "User 1";
+
         var ThreadInfo;
         try { ThreadInfo = await api.getThreadInfo(event.threadID); } catch (e) { ThreadInfo = null; }
         if (!ThreadInfo || !ThreadInfo.userInfo)
@@ -84,7 +86,8 @@ module.exports = {
         if (!candidates.length) return api.sendMessage("No suitable partner found for pairing.", event.threadID);
 
         var id2 = candidates[Math.floor(Math.random() * candidates.length)];
-        var name2 = (await api.getUserInfo(id2))[id2].name;
+        var userInfo2 = (await api.getUserInfo(id2))[id2];
+        var name2 = userInfo2 ? userInfo2.name : "User 2";
 
         var rd1 = Math.floor(Math.random() * 100) + 1;
         var cc = ["-𝟭", "𝟵𝟵.𝟵𝟵", "𝟭𝟵", "∞", "𝟭𝟬𝟭", "𝟬.𝟬𝟭"];
@@ -115,7 +118,7 @@ module.exports = {
         let canvas = createCanvas(W, H);
         let ctx = canvas.getContext("2d");
 
-        // Background (fallback gradient if imgur is rate-limiting)
+        // Background drawing
         if (baseImage) {
             ctx.drawImage(baseImage, 0, 0, W, H);
         } else {
@@ -126,19 +129,24 @@ module.exports = {
             ctx.fillRect(0, 0, W, H);
         }
 
-        // Avatars (grey box if avatar could not be loaded)
-        const drawAvt = (img, x) => {
-            if (img) ctx.drawImage(img, x, 111, 175, 330);
-            else { ctx.fillStyle = "#cccccc"; ctx.fillRect(x, 170, 300, 300); }
-        };
-        drawAvt(imgAvt1, 120);
-        drawAvt(imgAvt2, W - 420);
+        // Avatars drawing (with correct layout configuration you requested)
+        if (imgAvt1) {
+            ctx.drawImage(imgAvt1, 111, 175, 330, 330);
+        } else {
+            ctx.fillStyle = "#cccccc";
+            ctx.fillRect(111, 175, 330, 330);
+        }
 
+        if (imgAvt2) {
+            ctx.drawImage(imgAvt2, 1018, 173, 330, 330);
+        } else {
+            ctx.fillStyle = "#cccccc";
+            ctx.fillRect(1018, 173, 330, 330);
+        }
+
+        // Write canvas to file AFTER drawing everything
         fs.writeFileSync(pathImg, canvas.toBuffer());
 
-        // Send message with your kawaii styled message below
-        // Mentions first: names must come before any emoji / special unicode,
-        // otherwise Facebook's mention offsets get shifted and the mention breaks.
         const kawaiiMessage = `@${name1} & @${name2}
 
 🌸💞 Cᴏɴɢʀᴀᴛs 💞🌸 ✨
